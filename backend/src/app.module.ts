@@ -65,6 +65,8 @@ const initLogger = pino({ name: 'AppModule' });
         const redisHost = configService.get<string>('REDIS_HOST');
         const redisPort = configService.get<number>('REDIS_PORT') || 6379;
         const redisTtl = configService.get<number>('REDIS_TTL') || 3600;
+        const redisUsername = configService.get<string>('REDIS_USERNAME');
+        const redisPassword = configService.get<string>('REDIS_PASSWORD');
 
         if (!redisHost) {
           initLogger.info('Redis not configured, using in-memory cache');
@@ -78,7 +80,9 @@ const initLogger = pino({ name: 'AppModule' });
               port: redisPort,
               connectTimeout: 5000,
             },
-            ttl: redisTtl,
+            username: redisUsername,
+            password: redisPassword,
+            ttl: redisTtl * 1000,
           });
 
           store.client.on('error', (err: Error) => {

@@ -83,6 +83,8 @@ will not boot without them.
 | **Redis** (optional) | `REDIS_HOST` | no | — (omit → in-memory cache) |
 | | `REDIS_PORT` | no | `6379` |
 | | `REDIS_TTL` | no | `3600` (seconds) |
+| | `REDIS_USERNAME` | no | — (Redis ACL user) |
+| | `REDIS_PASSWORD` | no | — (Redis `requirepass` / ACL) |
 | **OAuth / CAPTCHA** | `GOOGLE_CLIENT_ID` | no | — (enables Google login) |
 | | `TURNSTILE_SECRET` | no | — (enables the login CAPTCHA) |
 | **Mail** (optional) | `MAILGUN_API_KEY` | no | — |
