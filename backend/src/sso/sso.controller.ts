@@ -28,9 +28,73 @@ export class SsoController {
     private readonly env: ConfigService,
   ) {}
 
-  // Kick off the OIDC authorization-code + PKCE flow.
+  // Kick off the OIDC authorization-code + PKCE flow (interactive login).
   @Get('login')
   async login(@Res() res: Response): Promise<void> {
+    await this.beginAuth(res);
+  }
+
+  // Silent login: attempt authorization with `prompt=none`. If an IdP session
+  // exists the user is logged in with no interaction; otherwise the IdP returns
+  // `login_required` and the callback falls back to the logged-out page. A
+  // one-shot `sso_silent` cookie lets the SPA avoid retrying in a loop.
+  @Get('silent')
+  async silentLogin(@Res() res: Response): Promise<void> {
+    res.cookie('sso_silent', '1', {
+      httpOnly: false, // the SPA reads this to gate its one-shot attempt
+      secure: isProd(),
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 10 * 60 * 1000,
+    });
+    await this.beginAuth(res, 'none');
+  }
+
+  // IdP redirects the browser back here with ?code & ?state, or ?error on a
+  // failed silent attempt (login_required / interaction_required).
+  @Get('callback')
+  async callback(@Req() req: Request, @Res() res: Response): Promise<void> {
+    // Rebuild the exact registered redirect URI + the incoming query string.
+    const redirectUri = this.env.getOrThrow<string>('SSO_REDIRECT_URI');
+    const currentUrl = new URL(redirectUri);
+    const qIndex = req.url.indexOf('?');
+    currentUrl.search = qIndex >= 0 ? req.url.slice(qIndex) : '';
+
+    // A silent attempt with no active IdP session comes back as an error — fall
+    // back to the logged-out page rather than throwing. The one-shot cookie
+    // stays set so the SPA shows the login form instead of looping.
+    if (currentUrl.searchParams.has('error')) {
+      // Keep `sso_silent` set so the SPA renders the login form, not a loop.
+      this.clearPkce(res);
+      res.redirect(this.env.get<string>('SSO_POST_LOGOUT_URI') ?? '/');
+      return;
+    }
+
+    const cookies = req.cookies as Record<string, string | undefined>;
+    const verifier = cookies['sso_verifier'];
+    const state = cookies['sso_state'];
+    if (!verifier || !state) {
+      throw new BadRequestException('Missing or expired SSO login session');
+    }
+
+    const { claims, idToken, sid } = await this.sso.exchange(
+      currentUrl,
+      verifier,
+      state,
+    );
+    this.clearPkce(res);
+    res.clearCookie('sso_silent', { path: '/' }); // logged in — reset the guard
+
+    const user = await this.sso.provisionUser(claims);
+    const tokens = this.authService.login(user, sid);
+    this.setAuthCookies(res, tokens, idToken);
+
+    res.redirect(this.env.get<string>('SSO_SUCCESS_REDIRECT') ?? '/');
+  }
+
+  // Generate PKCE, stash verifier/state in short-lived cookies, redirect to the
+  // IdP authorization endpoint (optionally silent via prompt=none).
+  private async beginAuth(res: Response, prompt?: 'none'): Promise<void> {
     const { verifier, challenge, state } = await this.sso.newPkce();
     const transient = {
       httpOnly: true,
@@ -41,38 +105,13 @@ export class SsoController {
     };
     res.cookie('sso_verifier', verifier, transient);
     res.cookie('sso_state', state, transient);
-    res.redirect(this.sso.buildAuthUrl(challenge, state).href);
+    res.redirect(this.sso.buildAuthUrl(challenge, state, prompt).href);
   }
 
-  // IdP redirects the browser back here with ?code & ?state.
-  @Get('callback')
-  async callback(@Req() req: Request, @Res() res: Response): Promise<void> {
-    const cookies = req.cookies as Record<string, string | undefined>;
-    const verifier = cookies['sso_verifier'];
-    const state = cookies['sso_state'];
-    if (!verifier || !state) {
-      throw new BadRequestException('Missing or expired SSO login session');
-    }
-
-    // Rebuild the exact registered redirect URI + the incoming query string.
-    const redirectUri = this.env.getOrThrow<string>('SSO_REDIRECT_URI');
-    const currentUrl = new URL(redirectUri);
-    const qIndex = req.url.indexOf('?');
-    currentUrl.search = qIndex >= 0 ? req.url.slice(qIndex) : '';
-
-    const { claims, idToken, sid } = await this.sso.exchange(
-      currentUrl,
-      verifier,
-      state,
-    );
+  // Drop the per-attempt PKCE cookies.
+  private clearPkce(res: Response): void {
     res.clearCookie('sso_verifier', { path: SSO_COOKIE_PATH });
     res.clearCookie('sso_state', { path: SSO_COOKIE_PATH });
-
-    const user = await this.sso.provisionUser(claims);
-    const tokens = this.authService.login(user, sid);
-    this.setAuthCookies(res, tokens, idToken);
-
-    res.redirect(this.env.get<string>('SSO_SUCCESS_REDIRECT') ?? '/');
   }
 
   // RP-initiated logout: clear our session, then bounce through the IdP's

@@ -7,6 +7,7 @@ import { TurnstileWidget } from '@/components/ui/turnstile-widget'
 import workspaceBg from '@/assets/images/login-day.webp'
 import { useAuthGuard } from '@/hooks/use-auth'
 import { useLogin } from '@/hooks/use-login'
+import { useSilentSso } from '@/hooks/use-silent-sso'
 
 export const Route = createFileRoute('/(auth)/login')({
   component: LoginPage,
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/(auth)/login')({
 
 function LoginPage() {
   useAuthGuard({ isAuthPage: true })
+  useSilentSso()
 
   const {
     register,

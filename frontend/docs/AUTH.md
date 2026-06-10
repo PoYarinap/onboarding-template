@@ -86,6 +86,11 @@ OIDC flow, sets the same session cookies, and redirects back into the SPA — `a
 hydrates from the `access_token` cookie on load, so no client-side token handling is needed.
 Enabled when the backend has `SSO_ISSUER` configured.
 
+**Silent login** (`useSilentSso`, `src/hooks/use-silent-sso.ts`) — when `VITE_SSO_SILENT=true`,
+the login page redirects an unauthenticated visitor once to `/api/auth/sso/silent`
+(`prompt=none`). An active IdP session logs them straight in; otherwise the backend bounces
+back and a one-shot `sso_silent` cookie keeps the login form from looping.
+
 ## Email verification gate
 
 `<EmailVerificationGate/>` wraps app (non-auth) pages in `__root.tsx`. It uses

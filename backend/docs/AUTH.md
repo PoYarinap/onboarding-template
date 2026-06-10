@@ -38,6 +38,7 @@ All under `/api/auth`. Tighter throttles protect the credential routes.
 | `POST /login` | — | 10/min | Email+password (+ Turnstile); sets cookies, returns `access_token` |
 | `POST /google` | — | 10/min | Google sign-in (id-token or `ya29.` access-token) |
 | `GET /sso/login` | — | default | Start the OIDC auth-code+PKCE flow (302 to the IdP) |
+| `GET /sso/silent` | — | default | Silent login (`prompt=none`); logs in if an IdP session exists, else falls back |
 | `GET /sso/callback` | — | default | IdP redirect target; provisions the user, sets cookies, 302 into the SPA |
 | `GET /sso/logout` | — | default | RP-initiated logout: clears cookies, 302 to the IdP end-session |
 | `POST /sso/backchannel-logout` | — | default | IdP-to-server signed `logout_token`; revokes the session |
@@ -159,6 +160,12 @@ GET /api/auth/sso/callback?code&state
   are auto-created (auto-verified, random unusable password) and granted the `SSO_DEFAULT_ROLE`
   (default `user`); returning users have their name/phone refreshed. The SSO `roles`/`permissions`
   claims are **intentionally ignored** — access is managed in-app via the normal RBAC model.
+- **Silent login** (`GET /sso/silent`) — builds the authorize URL with `prompt=none`. If an
+  IdP session exists the user is logged in with no click; otherwise the IdP returns
+  `login_required` and the callback (detecting the `error` query param) falls back to the
+  logged-out page instead of throwing. A short-lived non-httpOnly `sso_silent` cookie is set
+  per attempt so the SPA tries **once** and then renders the login form rather than looping.
+  The frontend opts in with `VITE_SSO_SILENT=true`.
 - **Logout** — SSO sessions carry a `sid` in their JWT, so the SPA routes logout to
   `GET /sso/logout` (RP-initiated): it clears the cookies and 302s through the IdP
   `session/end`. The IdP then fires back-channel logout to revoke the session everywhere.

@@ -143,13 +143,16 @@ export class SsoService implements OnModuleInit {
     return { verifier, challenge, state: client.randomState() };
   }
 
-  buildAuthUrl(challenge: string, state: string): URL {
+  // `prompt: 'none'` requests a silent authorization — the IdP either returns a
+  // code (an active session exists) or errors with `login_required`.
+  buildAuthUrl(challenge: string, state: string, prompt?: 'none'): URL {
     return client.buildAuthorizationUrl(this.requireConfig(), {
       redirect_uri: this.env.getOrThrow<string>('SSO_REDIRECT_URI'),
       scope: SCOPE,
       code_challenge: challenge,
       code_challenge_method: 'S256',
       state,
+      ...(prompt ? { prompt } : {}),
     });
   }
 
