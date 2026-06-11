@@ -109,7 +109,9 @@ for the controller half and [DATA_LAYER.md](./DATA_LAYER.md) for the service hal
   fallback if Redis is unreachable).
 - `TypeOrmModule.forRootAsync` — Postgres; entities auto-discovered via the glob
   `__dirname + '/**/*.entity{.ts,.js}'`; `synchronize` on when `DB_SYNCHRONIZE=true` or
-  outside production.
+  outside production. When `synchronize` is off (prod), `migrationsRun: true` applies pending
+  migrations from `database/migrations/*` on boot. The CLI DataSource for
+  generate/run/revert lives in `src/database/data-source.ts`.
 - Feature modules: Users, Invitations, Auth, Roles, Permissions, Media, Seeder, Cache,
   Notifications, Mail, Health.
 

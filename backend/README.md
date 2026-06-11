@@ -44,14 +44,31 @@ bun run test               # bun test (unit + e2e)
 bun run test:unit          # bun test ./src (unit specs only)
 bun run test:e2e           # bun test ./test/*.e2e.spec.ts
 bun run seed               # populate permissions, roles, admin user
-bun run migrate:fresh      # drop + recreate the schema
+bun run migrate:fresh      # drop + recreate the schema (dev nuke — synchronize)
 bun run migrate:fresh:seed # drop + recreate + seed
+bun run migration:generate src/database/migrations/<Name>  # diff entities → new migration
+bun run migration:run      # apply pending migrations
+bun run migration:revert   # roll back the last migration
+bun run migration:show     # list migrations and their applied state
 bun run spec:generate      # write swagger.json (OpenAPI spec for the frontend)
 ```
 
 > The API requires a running PostgreSQL. Copy `.env.example` to `.env` and fill it in
 > before the first boot — `src/config/env.ts` validates it and **throws on startup** if a
 > required var is missing or malformed.
+
+### Schema: synchronize (dev) vs migrations (prod)
+
+`DB_SYNCHRONIZE` controls which strategy boots. When it is on (the default in
+non-production), TypeORM auto-syncs the schema to the entities — fast for local iteration.
+When it is off (the default in production), `synchronize` is disabled and **pending
+migrations run automatically on boot** (`migrationsRun`).
+
+Workflow after changing an entity: `bun run migration:generate
+src/database/migrations/<Name>`, review the generated SQL, commit it. The migration applies
+on the next prod deploy. The standalone CLI DataSource lives in
+`src/database/data-source.ts`. Never use `synchronize` in production — it can drop columns
+and lose data.
 
 ## Environment variables
 

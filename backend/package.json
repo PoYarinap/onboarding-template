@@ -22,6 +22,11 @@
     "seed": "bun run src/scripts/seed.ts",
     "migrate:fresh": "bun run src/scripts/reset-db.ts",
     "migrate:fresh:seed": "bun run src/scripts/reset-db.ts --seed",
+    "typeorm": "bun run node_modules/typeorm/cli.js -d src/database/data-source.ts",
+    "migration:generate": "bun run node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
+    "migration:run": "bun run node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:revert": "bun run node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
+    "migration:show": "bun run node_modules/typeorm/cli.js migration:show -d src/database/data-source.ts",
     "spec:generate": "bun run src/scripts/generate-spec.ts"
   },
   "dependencies": {

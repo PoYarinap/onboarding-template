@@ -104,18 +104,24 @@ const initLogger = pino({ name: 'AppModule' });
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('DB_SYNCHRONIZE')
+      useFactory: (configService: ConfigService) => {
+        const synchronize = configService.get('DB_SYNCHRONIZE')
           ? configService.get('DB_SYNCHRONIZE') === 'true'
-          : configService.get('NODE_ENV') !== 'production',
-      }),
+          : configService.get('NODE_ENV') !== 'production';
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT'),
+          username: configService.get<string>('DB_USERNAME'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_NAME'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
+          synchronize,
+          // When synchronize is off (prod), apply pending migrations on boot.
+          migrationsRun: !synchronize,
+        };
+      },
       inject: [ConfigService],
     }),
     UsersModule,

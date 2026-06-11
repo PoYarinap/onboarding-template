@@ -99,7 +99,12 @@ bun run lint          # eslint --fix
 bun run test          # unit + e2e
 bun run build         # confirms zero TS errors AND tsc-alias works
 bun run spec:generate # only if you changed routes or DTOs
+bun run migration:generate src/database/migrations/<Name>  # only if you changed an entity
 ```
+
+If you changed an entity, generate a migration, review the SQL, and commit it — prod boots
+with `synchronize` off and applies pending migrations automatically. Never rely on
+`synchronize` in production (it can drop columns). `migrate:fresh` is a dev-only nuke.
 
 **Frontend** (`cd frontend`):
 ```bash
