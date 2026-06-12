@@ -11,7 +11,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Media]),
-    // Use memory storage - Bun's S3 API will handle the upload
+    // Use memory storage - the Depot SDK handles the upload to S3
     MulterModule.register({
       storage: multer.memoryStorage(),
     }),

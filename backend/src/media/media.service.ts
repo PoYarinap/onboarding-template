@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindManyOptions, ILike, FindOptionsWhere } from 'typeorm';
 import { Media } from './entities/media.entity';
 import { BaseService } from '../common/services/base.service';
-import { S3Client } from 'bun';
+import { DepotClient, DepotError } from '@univstekom/depot-sdk';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MediaService extends BaseService<Media> {
-  private s3Client: S3Client;
+  private depot: DepotClient;
 
   constructor(
     @InjectRepository(Media)
@@ -17,21 +17,21 @@ export class MediaService extends BaseService<Media> {
   ) {
     super(mediaRepository, 'Media', ['filename', 'mimetype']);
 
-    this.s3Client = new S3Client({
-      accessKeyId: this.configService.get<string>('S3_ACCESS_KEY_ID'),
-      secretAccessKey: this.configService.get<string>('S3_SECRET_ACCESS_KEY'),
-      endpoint: this.configService.get<string>('S3_ENDPOINT'),
-      bucket: this.configService.get<string>('S3_BUCKET'),
-      region: this.configService.get<string>('S3_REGION'),
+    this.depot = new DepotClient({
+      baseUrl: this.configService.get<string>('DEPOT_BASE_URL')!,
+      apiKey: this.configService.get<string>('DEPOT_API_KEY')!,
     });
   }
 
   async uploadFile(file: Express.Multer.File, userId: number): Promise<Media> {
-    const key = `uploads/${Date.now()}-${file.originalname}`;
-    const s3File = this.s3Client.file(key);
-
-    await s3File.write(file.buffer, {
-      type: file.mimetype,
+    // Backend proxies the upload: the SDK presigns, PUTs the bytes straight to
+    // S3, then finalizes. The local row is a facade for RBAC/ownership.
+    const depotFile = await this.depot.upload({
+      body: file.buffer,
+      name: file.originalname,
+      mime: file.mimetype,
+      size: file.size,
+      ownerUserId: userId,
     });
 
     const media = this.mediaRepository.create({
@@ -39,13 +39,14 @@ export class MediaService extends BaseService<Media> {
       originalName: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
-      path: key,
+      path: depotFile.s3Key,
+      depotFileId: depotFile.id,
       userId,
     });
 
     const savedMedia = await this.mediaRepository.save(media);
 
-    // Update with local view URL
+    // Update with local view URL (302-redirects to a Depot signed URL)
     const baseUrl =
       this.configService.get<string>('APP_URL') || 'http://localhost:3000';
     savedMedia.url = `${baseUrl}/api/media/${savedMedia.id}/view`;
@@ -53,9 +54,28 @@ export class MediaService extends BaseService<Media> {
     return this.mediaRepository.save(savedMedia);
   }
 
-  async getFileStream(id: number) {
+  /** Resolve a short-lived Depot signed URL for the underlying object. */
+  async getSignedUrl(id: number): Promise<string> {
     const media = await this.findOne(id);
-    return this.s3Client.file(media.path);
+    const { url } = await this.depot.getUrl(media.depotFileId);
+    return url;
+  }
+
+  override async remove(id: number): Promise<void> {
+    const media = await this.findOne(id);
+    await super.remove(id);
+
+    // Best-effort remote delete; a missing Depot object must not block the
+    // local soft-delete.
+    if (media.depotFileId) {
+      try {
+        await this.depot.delete(media.depotFileId);
+      } catch (err) {
+        if (!(err instanceof DepotError && err.status === 404)) {
+          throw err;
+        }
+      }
+    }
   }
 
   async findAllMediaPaginated(
