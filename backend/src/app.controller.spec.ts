@@ -24,8 +24,13 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return API metadata with ok status', () => {
+      const info = appController.getApiInfo();
+      expect(info.name).toBe('Nestplate API');
+      expect(info.status).toBe('ok');
+      expect(info.docs).toBe('/api/docs');
+      expect(typeof info.version).toBe('string');
+      expect(typeof info.timestamp).toBe('string');
     });
   });
 });
