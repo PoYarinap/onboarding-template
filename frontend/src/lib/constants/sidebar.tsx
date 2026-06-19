@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Database,
   Image as ImageIcon,
   Key,
@@ -21,6 +22,7 @@ export const MENU_PERMISSIONS = {
   permissions: 'menu.permissions',
   media: 'menu.media',
   invitations: 'menu.invitations',
+  journals: 'menu.journals',
 } as const
 
 export type MenuPermissionKey =
@@ -106,6 +108,14 @@ export const sidebarData: Array<NavGroup> = [
         href: '/media',
         menuPermission: MENU_PERMISSIONS.media,
         permission: 'media.read',
+      },
+      {
+        key: 'journals',
+        icon: <BookOpen size={20} />,
+        label: 'Journals',
+        href: '/journals',
+        menuPermission: MENU_PERMISSIONS.journals,
+        permission: 'journals.read',
       },
     ],
   },

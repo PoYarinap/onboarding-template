@@ -36,4 +36,10 @@ export type PermissionType =
   | 'roles.update'
   | 'roles.delete'
   | 'roles.manage_permissions'
-  | 'google-drive.access';
+  | 'google-drive.access'
+  | 'journals.create'
+  | 'journals.read'
+  | 'journals.read_all'
+  | 'journals.update'
+  | 'journals.delete'
+  | 'menu.journals';
