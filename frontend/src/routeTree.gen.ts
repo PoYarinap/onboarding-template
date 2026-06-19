@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as usersUsersRouteImport } from './routes/(users)/users'
 import { Route as usersInvitationsRouteImport } from './routes/(users)/invitations'
 import { Route as mediaMediaRouteImport } from './routes/(media)/media'
+import { Route as journalsJournalsRouteImport } from './routes/(journals)/journals'
 import { Route as contentNotificationsRouteImport } from './routes/(content)/notifications'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
 import { Route as authResetPasswordRouteImport } from './routes/(auth)/reset-password'
@@ -52,6 +53,11 @@ const usersInvitationsRoute = usersInvitationsRouteImport.update({
 const mediaMediaRoute = mediaMediaRouteImport.update({
   id: '/(media)/media',
   path: '/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const journalsJournalsRoute = journalsJournalsRouteImport.update({
+  id: '/(journals)/journals',
+  path: '/journals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const contentNotificationsRoute = contentNotificationsRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof authResetPasswordRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/notifications': typeof contentNotificationsRoute
+  '/journals': typeof journalsJournalsRoute
   '/media': typeof mediaMediaRoute
   '/invitations': typeof usersInvitationsRoute
   '/users': typeof usersUsersRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof authResetPasswordRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/notifications': typeof contentNotificationsRoute
+  '/journals': typeof journalsJournalsRoute
   '/media': typeof mediaMediaRoute
   '/invitations': typeof usersInvitationsRoute
   '/users': typeof usersUsersRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/(auth)/reset-password': typeof authResetPasswordRoute
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/(content)/notifications': typeof contentNotificationsRoute
+  '/(journals)/journals': typeof journalsJournalsRoute
   '/(media)/media': typeof mediaMediaRoute
   '/(users)/invitations': typeof usersInvitationsRoute
   '/(users)/users': typeof usersUsersRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/notifications'
+    | '/journals'
     | '/media'
     | '/invitations'
     | '/users'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/notifications'
+    | '/journals'
     | '/media'
     | '/invitations'
     | '/users'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/(auth)/reset-password'
     | '/(auth)/verify-email'
     | '/(content)/notifications'
+    | '/(journals)/journals'
     | '/(media)/media'
     | '/(users)/invitations'
     | '/(users)/users'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   authResetPasswordRoute: typeof authResetPasswordRoute
   authVerifyEmailRoute: typeof authVerifyEmailRoute
   contentNotificationsRoute: typeof contentNotificationsRoute
+  journalsJournalsRoute: typeof journalsJournalsRoute
   mediaMediaRoute: typeof mediaMediaRoute
   usersInvitationsRoute: typeof usersInvitationsRoute
   usersUsersRoute: typeof usersUsersRoute
@@ -255,6 +268,13 @@ declare module '@tanstack/react-router' {
       path: '/media'
       fullPath: '/media'
       preLoaderRoute: typeof mediaMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(journals)/journals': {
+      id: '/(journals)/journals'
+      path: '/journals'
+      fullPath: '/journals'
+      preLoaderRoute: typeof journalsJournalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(content)/notifications': {
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   authResetPasswordRoute: authResetPasswordRoute,
   authVerifyEmailRoute: authVerifyEmailRoute,
   contentNotificationsRoute: contentNotificationsRoute,
+  journalsJournalsRoute: journalsJournalsRoute,
   mediaMediaRoute: mediaMediaRoute,
   usersInvitationsRoute: usersInvitationsRoute,
   usersUsersRoute: usersUsersRoute,

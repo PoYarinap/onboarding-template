@@ -62,6 +62,17 @@ export class SeederService implements OnApplicationBootstrap {
       description: 'Delete all media files regardless of ownership',
     },
     { name: 'media.delete', description: 'Delete media files' },
+
+    // Journal permissions
+    { name: 'menu.journals', description: 'View journals in sidebar' },
+    { name: 'journals.create', description: 'Create journal entries' },
+    { name: 'journals.read', description: 'Read own journal entries' },
+    {
+      name: 'journals.read_all',
+      description: 'Read all users journal entries',
+    },
+    { name: 'journals.update', description: 'Update own journal entries' },
+    { name: 'journals.delete', description: 'Delete own journal entries' },
   ];
 
   constructor(

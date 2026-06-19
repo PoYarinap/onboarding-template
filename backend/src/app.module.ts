@@ -23,6 +23,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MailModule } from './mail/mail.module';
 import { HealthModule } from './health/health.module';
+import { JournalsModule } from './journals/journals.module';
 
 const initLogger = pino({ name: 'AppModule' });
 
@@ -136,6 +137,7 @@ const initLogger = pino({ name: 'AppModule' });
     NotificationsModule,
     MailModule,
     HealthModule,
+    JournalsModule,
   ],
   controllers: [AppController],
   providers: [
